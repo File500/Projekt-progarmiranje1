@@ -83,6 +83,55 @@ void promjeni_silku (int len, int hi, int slika[][len]){
 }
 
 
+void alternativna_metoda(int len, int hi, int slika[][len]){
+
+	int tmp_pic[hi][len];
+
+		for (int i = 0; i < hi ; ++i){
+		for (int j = 0; j < len; ++j)
+		{
+			int tmp = 0;
+			int broj_susjeda = 0;
+
+			if (j - 1 >= 0)
+			{
+				broj_susjeda++;
+				tmp += slika[i][j-1];
+			}
+
+			if (i - 1 >= 0)
+			{
+				broj_susjeda++;
+				tmp += slika[i-1][j];
+			}
+
+			if (j + 1 < len)
+			{
+				broj_susjeda++;
+				tmp += slika[i][j+1];
+			}
+
+			if (i + 1 < hi)
+			{
+				broj_susjeda++;
+				tmp += slika[i+1][j];
+			}
+
+			tmp_pic[i][j] = tmp/broj_susjeda;
+		}
+	}
+
+	for (int i = 0; i < hi; ++i)
+	{
+		for (int j = 0; j < len; ++j)
+		{
+			slika[i][j] = tmp_pic[i][j];
+		}
+	}
+}
+
+
+
 int main()
 {
 	char tip_slike[2];
@@ -94,7 +143,8 @@ int main()
 	int slika[height][lenght];
 
 	ucitaj_sliku(lenght, height, slika);
-	promjeni_silku(lenght, height, slika);
+	//promjeni_silku(lenght, height, slika);
+	alternativna_metoda(lenght, height, slika);
 	ispisi_sliku(lenght, height, slika);
 	
 
