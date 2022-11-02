@@ -10,10 +10,12 @@
 // image data
 typedef struct PGMImage {
 	char pgmType[3];
-	unsigned char** data;
+	int data[1000][1000];
 	unsigned int width;
 	unsigned int height;
 	unsigned int maxValue;
+	int data_height;
+	int color_counter[256];
 } PGMImage;
 
 // Function to ignore any comments
@@ -24,9 +26,7 @@ void ignoreComments(FILE* fp)
 	char line[100];
 
 	// Ignore any blank lines
-	while ((ch = fgetc(fp)) != EOF
-		&& isspace(ch))
-		;
+	while ((ch = fgetc(fp)) != EOF&& isspace(ch));
 
 	// Recursively ignore comments
 	// in a PGM image commented lines
@@ -41,13 +41,11 @@ void ignoreComments(FILE* fp)
 
 // Function to open the input a PGM
 // file and process it
-bool openPGM(PGMImage* pgm,
-			const char* filename)
+bool openPGM(PGMImage* pgm, const char* filename)
 {
 	// Open the image file in the
 	// 'read binary' mode
-	FILE* pgmfile
-		= fopen(filename, "rb");
+	FILE* pgmfile = fopen(filename, "rb");
 
 	// If file does not exist,
 	// then return
@@ -57,63 +55,38 @@ bool openPGM(PGMImage* pgm,
 	}
 
 	ignoreComments(pgmfile);
-	fscanf(pgmfile, "%s",
-		pgm->pgmType);
-
-	// Check for correct PGM Binary
-	// file type
-	//pisalo je "P5"
-	if (strcmp(pgm->pgmType, "P2")) {
-		fprintf(stderr,
-				"Wrong file type!\n");
-		exit(EXIT_FAILURE);
-	}
+	fscanf(pgmfile, "%s", pgm->pgmType);
 
 	ignoreComments(pgmfile);
 
 	// Read the image dimensions
-	fscanf(pgmfile, "%d %d",
-		&(pgm->width),
-		&(pgm->height));
+	fscanf(pgmfile, "%d %d", &(pgm->width), &(pgm->height));
 
 	ignoreComments(pgmfile);
 
 	// Read maximum gray value
 	fscanf(pgmfile, "%d", &(pgm->maxValue));
+	memset(pgm->color_counter, 0, sizeof(pgm->color_counter));
 	ignoreComments(pgmfile);
-
-	// Allocating memory to store
-	// img info in defined struct
-	pgm->data
-		= malloc(pgm->height
-				* sizeof(unsigned char*));
 
 	// Storing the pixel info in
 	// the struct
-	if (pgm->pgmType[1] == '5') {
 
-		fgetc(pgmfile);
+	if (pgm->pgmType[1] == '3')
+	{
+		pgm->data_height = pgm->width * pgm->height;
+	}else{
+		pgm->data_height = pgm->height;
+	}
 
-		for (int i = 0;
-			i < pgm->height; i++) {
-			pgm->data[i]
-				= malloc(pgm->width
-						* sizeof(unsigned char));
+	for (int i = 0; i < pgm->data_height; ++i) {
 
-			// If memory allocation
-			// is failed
-			if (pgm->data[i] == NULL) {
-				fprintf(stderr,
-						"malloc failed\n");
-				exit(1);
-			}
+		for (int j = 0; j < pgm->width; ++j)
+		{
+			fscanf(pgmfile, "%d ", &(pgm->data[i][j]));
 
-			// Read the gray values and
-			// write on allocated memory
-			fread(pgm->data[i],
-				sizeof(unsigned char),
-				pgm->width, pgmfile);
 		}
+
 	}
 
 	// Close the file
@@ -122,9 +95,35 @@ bool openPGM(PGMImage* pgm,
 	return true;
 }
 
+//print out immage data 
+void print_immage(PGMImage* pgm){
+
+	for (int i = 0; i < pgm->data_height; ++i)
+	{
+		for (int j = 0; j < pgm->width; ++j)
+		{
+
+			if (pgm->data[i][j] >= 100)
+			{						
+				printf(" %d", pgm->data[i][j]);
+
+			}else if(pgm->data[i][j] >= 10){
+
+				printf("  %d", pgm->data[i][j]);
+
+			}else{
+
+				printf("   %d", pgm->data[i][j]);
+			}		
+		
+		}
+
+		printf("\n");
+	}
+}
+
 // Function to print the file details
-void printImageDetails(PGMImage* pgm,
-					const char* filename)
+void printImageDetails(PGMImage* pgm, const char* filename)
 {
 	FILE* pgmfile = fopen(filename, "rb");
 
@@ -132,56 +131,64 @@ void printImageDetails(PGMImage* pgm,
 	char* ext = strrchr(filename, '.');
 
 	if (!ext)
-		printf("No extension found"
-			"in file %s",
-			filename);
+		printf("No extension found" "in file %s",filename);
 	else
-		printf("File format"
-			" : %s\n",
-			ext + 1);
+		printf("File format" " : %s\n", ext + 1);
 
-	printf("PGM File type : %s\n",
-		pgm->pgmType);
+	printf("PGM File type : %s\n", pgm->pgmType);
 
 	// Print type of PGM file, in ascii
 	// and binary format
-	if (!strcmp(pgm->pgmType, "P2"))
-		printf("PGM File Format:"
-			"ASCII\n");
-	else if (!strcmp(pgm->pgmType,
-					"P5"))
-		printf("PGM File Format:"
-			" Binary\n");
 
-	printf("Width of img : %d px\n",
-		pgm->width);
-	printf("Height of img : %d px\n",
-		pgm->height);
-	printf("Max Gray value : %d\n",
-		pgm->maxValue);
+	printf("Width of img : %d px\n", pgm->width);
+	printf("Height of img : %d px\n",pgm->height);
+	printf("Max value : %d\n",pgm->maxValue);
 
 	// close file
 	fclose(pgmfile);
 }
 
-// Driver Code
+void count_color_values(PGMImage* pgm){
+
+	//counting color values in triplets
+	for (int i = 0; i < pgm->data_height; ++i)
+	{
+		for (int j = 0; j < pgm->width; ++j)
+		{
+			pgm->color_counter[pgm->data[i][j]]++;
+		}
+	}
+
+	//print brojaca za test ispravnosti
+	/*for (int i = 0; i <= pgm->maxValue; ++i)
+	{
+		printf("%d ", pgm->color_counter[i]);
+	}*/
+
+}
+
+
+
+
 int main(int argc, char const* argv[])
 {
 	PGMImage* pgm = malloc(sizeof(PGMImage));
-	const char* ipfile;
+	char ipfile[1000];
 
-	if (argc == 2)
-		ipfile = argv[1];
-	else
-		ipfile = "gfg_logo.pgm";
-
-	printf("\tip file : %s\n", ipfile);
+	scanf("%s", &ipfile);
+	printf("ip file : %s\n", ipfile);
 
 	// Process the image and print
 	// its details
-	if (openPGM(pgm, ipfile)){
+
+	if(openPGM(pgm, ipfile)){
+
 		printImageDetails(pgm, ipfile);
+		print_immage(pgm);
+		count_color_values(pgm);
+
 	}
+	
 
 	return 0;
 }
