@@ -279,6 +279,8 @@ void print_immagePGM(PGMImage* pgm){
 		printf("\n");
 	}
 
+	printf("\n");
+
 }
 
 void count_gray_values(PGMImage* pgm){
@@ -296,7 +298,25 @@ void count_gray_values(PGMImage* pgm){
 /////////////////////////////////////////////////////////////////Histograms///////////////////////////////////////
 //WIP
 void show_image_histogramsPPM(){}
-void show_image_histogramsPGM(){}
+
+void show_image_histogramsPGM(PGMImage* pgm){
+
+	printf("GRAY HISTOGRAM\nLegend:\n\'()\'->gray value\n\'[]\'->number of scaned values in image\n\n");
+	int i, j;
+
+	for (i = 0; i <= pgm->maxValue; ++i)
+	{
+		printf("(%d)", i);
+
+		for (j = 0; j < pgm->gray_counter[i]; ++j)
+		{
+			printf("+");
+		}
+
+		printf("[%d]\n", j);
+	}
+}
+
 void sharpen_image_PPM(){}
 void sharpen_image_PGM(){}
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -343,6 +363,7 @@ int main(int argc, char const* argv[])
 			printImageDetailsPGM(pgm, ipfile);
 			print_immagePGM(pgm);
 			count_gray_values(pgm);
+			show_image_histogramsPGM(pgm);
 		}
 
 	}else{
