@@ -42,8 +42,7 @@ typedef struct PGMImage{
 
 // Function to ignore any comments
 // in file
-void ignoreComments(FILE* fp)
-{
+void ignoreComments(FILE* fp){
 	int ch;
 	char line[100];
 
@@ -65,8 +64,7 @@ void ignoreComments(FILE* fp)
 
 // Function to open the input a PPM
 // file and process it
-bool openPPM(PPMImage* ppm, const char* filename)
-{
+bool openPPM(PPMImage* ppm, const char* filename){
 	// Open the image file in the
 	// 'read binary' mode
 	FILE* ppmfile = fopen(filename, "rb");
@@ -91,24 +89,18 @@ bool openPPM(PPMImage* ppm, const char* filename)
 	// Read maximum value
 	fscanf(ppmfile, "%d", &(ppm->maxValue));
 
-	//set the counters and fixated data width in ppm picture
+	//set the counters and data width and height in ppm picture
 	memset(ppm->red_counter, 0, sizeof(ppm->red_counter));
 	memset(ppm->blue_counter, 0, sizeof(ppm->blue_counter));
 	memset(ppm->green_counter, 0, sizeof(ppm->green_counter));
-	ppm->data_width = 3;
+	ppm->data_width = 3*ppm->width;
+	ppm->data_height = ppm->height;
 
 	ignoreComments(ppmfile);
 
 	// Storing the pixel info in
 	// the struct
-
-	if (ppm->ppmType[1] == '3')
-	{
-		ppm->data_height = ppm->width * ppm->height;
-	}else{
-		ppm->data_height = ppm->height;
-	}
-
+		
 	for (int i = 0; i < ppm->data_height; ++i) {
 
 		for (int j = 0; j < ppm->data_width; ++j)
@@ -153,8 +145,7 @@ void print_immagePPM(PPMImage* ppm){
 }
 
 // Function to print the file details
-void printImageDetailsPPM(PPMImage* ppm, const char* filename)
-{
+void printImageDetailsPPM(PPMImage* ppm, const char* filename){
 
 	printf("PPM File type : %s\n", ppm->ppmType);
 
@@ -163,32 +154,31 @@ void printImageDetailsPPM(PPMImage* ppm, const char* filename)
 	printf("Width of img : %d px\n", ppm->width);
 	printf("Height of img : %d px\n",ppm->height);
 	printf("Max value : %d\n\n",ppm->maxValue);
-
 }
 
 void count_color_values(PPMImage* ppm){
-
+	int iterator = 0;
 	//counting color values in triplets for each R , B and G values seperately
 	for (int i = 0; i < ppm->data_height; ++i)
 	{
 		for (int j = 0; j < ppm->data_width; ++j)
 		{
-			if(j == 0){
 
+			if(iterator == 0){
+				iterator++;
 				ppm->red_counter[ppm->data[i][j]]++;
 
-			}else if(j == 1){
-
+			}else if(iterator == 1){
+				iterator++;
 				ppm->blue_counter[ppm->data[i][j]]++;
 
 			}else{
-
+				iterator = 0;
 				ppm->green_counter[ppm->data[i][j]]++;
 
 			}
 		}
 	}
-
 }
 //////////////////////////////////////////////////////////////////////GRAY/////////////////////////////////////
 bool openPGM(PGMImage* pgm, const char* filename){
@@ -251,7 +241,6 @@ void printImageDetailsPGM(PGMImage* pgm, const char* filename){
 	printf("Width of img : %d px\n", pgm->width);
 	printf("Height of img : %d px\n",pgm->height);
 	printf("Max value : %d\n\n",pgm->maxValue);
-
 }
 
 void print_immagePGM(PGMImage* pgm){
@@ -280,7 +269,6 @@ void print_immagePGM(PGMImage* pgm){
 	}
 
 	printf("\n");
-
 }
 
 void count_gray_values(PGMImage* pgm){
@@ -293,11 +281,136 @@ void count_gray_values(PGMImage* pgm){
 			pgm->gray_counter[pgm->data[i][j]]++;
 		}
 	}
-
 }
 /////////////////////////////////////////////////////////////////Histograms///////////////////////////////////////
 //WIP
-void show_image_histogramsPPM(){}
+void show_image_histogramsPPM(PPMImage* ppm){
+
+	//red histogram
+	int i, j;
+	printf("RED HISTOGRAM\nLegend:\n\'()\'->red value\n\'[]\'->number of scaned values in image\n\n");
+
+	for (i = 0; i <= ppm->maxValue; ++i)
+	{
+		printf("(%d)", i);
+
+		int barrier = 180;
+		if (ppm->red_counter[i] < barrier)
+		{
+			barrier = ppm->red_counter[i];
+		}
+
+		for (j = 0; j < barrier; ++j)
+		{
+			printf("=");
+		}
+
+		printf("[%d]\n", ppm->red_counter[i]);		
+		
+	}
+
+	//blue histogram
+	printf("\nBLUE HISTOGRAM\nLegend:\n\'()\'->blue value\n\'[]\'->number of scaned values in image\n\n");
+
+	for (i = 0; i <= ppm->maxValue; ++i)
+	{	
+		printf("(%d)", i);
+		
+		int barrier = 180;
+		if (ppm->blue_counter[i] < barrier)
+		{
+			barrier = ppm->blue_counter[i];
+		}
+
+		for (j = 0; j < barrier; ++j)
+		{
+			printf("+");
+		}
+
+		printf("[%d]\n", ppm->blue_counter[i]);	
+		
+	}
+
+	//green histogram
+	printf("\nGREEN HISTOGRAM\nLegend:\n\'()\'->green value\n\'[]\'->number of scaned values in image\n\n");
+
+	for (i = 0; i <= ppm->maxValue; ++i)
+	{
+		printf("(%d)", i);
+
+		int barrier = 180;
+		if (ppm->green_counter[i] < barrier)
+		{
+			barrier = ppm->green_counter[i];
+		}
+
+		for (j = 0; j < barrier; ++j)
+		{
+			printf("#");
+		}
+
+		printf("[%d]\n", ppm->green_counter[i]);
+		
+	}
+
+
+	//cummulative histogram
+	printf("\nRGB HISTOGRAM\nLegend:\n\'()\'->color value\n\'[]\'->number of scaned values in image\n\'=\'->red\n\'+\'->blue\n\'#\'->green\n\n");
+
+	for (i = 0; i <= ppm->maxValue; ++i)
+	{
+
+		//red
+		printf("(%d)", i);
+
+		int barrierRED = 180;
+		if (ppm->red_counter[i] < barrierRED)
+		{
+			barrierRED = ppm->red_counter[i];
+		}
+
+		for (j = 0; j < barrierRED; ++j)
+		{
+			printf("=");
+		}
+
+		printf("[%d]\n", ppm->red_counter[i]);	
+
+		//green
+		printf("(%d)", i);
+
+		int barrierGREEN = 180;
+		if (ppm->green_counter[i] < barrierGREEN)
+		{
+			barrierGREEN = ppm->green_counter[i];
+		}
+
+		for (j = 0; j < barrierGREEN; ++j)
+		{
+			printf("#");
+		}
+
+		printf("[%d]\n", ppm->green_counter[i]);
+
+		//blue
+		printf("(%d)", i);
+		
+		int barrierBLUE = 180;
+		if (ppm->blue_counter[i] < barrierBLUE)
+		{
+			barrierBLUE = ppm->blue_counter[i];
+		}
+
+		for (j = 0; j < barrierBLUE; ++j)
+		{
+			printf("+");
+		}
+
+		printf("[%d]\n", ppm->blue_counter[i]);	
+		
+	}
+
+}
 
 void show_image_histogramsPGM(PGMImage* pgm){
 
@@ -310,7 +423,7 @@ void show_image_histogramsPGM(PGMImage* pgm){
 
 		for (j = 0; j < pgm->gray_counter[i]; ++j)
 		{
-			printf("+");
+			printf("=");
 		}
 
 		printf("[%d]\n", j);
@@ -348,9 +461,11 @@ int main(int argc, char const* argv[])
 
 			// PPM
 			// Process the image and print details
+
 			printImageDetailsPPM(ppm, ipfile);
-			print_immagePPM(ppm);
+			//print_immagePPM(ppm);
 			count_color_values(ppm);
+			show_image_histogramsPPM(ppm);
 
 		}
 
@@ -360,8 +475,9 @@ int main(int argc, char const* argv[])
 
 			// PGM
 			// Proces the image and print deatails
+
 			printImageDetailsPGM(pgm, ipfile);
-			print_immagePGM(pgm);
+			//print_immagePGM(pgm);
 			count_gray_values(pgm);
 			show_image_histogramsPGM(pgm);
 		}
