@@ -421,12 +421,18 @@ void show_image_histogramsPGM(PGMImage* pgm){
 	{
 		printf("(%d)", i);
 
-		for (j = 0; j < pgm->gray_counter[i]; ++j)
+		int barrierGRAY = 180;
+		if (pgm->gray_counter[i] < barrierGRAY)
+		{
+			barrierGRAY = pgm->gray_counter[i];
+		}
+
+		for (j = 0; j < barrierGRAY; ++j)
 		{
 			printf("=");
 		}
 
-		printf("[%d]\n", j);
+		printf("[%d]\n", pgm->gray_counter[i]);
 	}
 }
 
