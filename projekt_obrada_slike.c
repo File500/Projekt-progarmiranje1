@@ -1,5 +1,6 @@
-// C Program to read a PPM image
-// and print its parameters
+// C Program to read a PPM & PGM image
+// and print its parameters and histograms.
+// Used to normalise histograms and sharpen the image.
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
