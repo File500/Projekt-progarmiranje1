@@ -145,7 +145,7 @@ void print_immagePPM(PPMImage* ppm){
 }
 
 // Function to print the file details
-void printImageDetailsPPM(PPMImage* ppm, const char* filename){
+void printImageDetailsPPM(PPMImage* ppm){
 
 	printf("PPM File type : %s\n", ppm->ppmType);
 
@@ -232,7 +232,7 @@ bool openPGM(PGMImage* pgm, const char* filename){
 	return true;
 }
 
-void printImageDetailsPGM(PGMImage* pgm, const char* filename){
+void printImageDetailsPGM(PGMImage* pgm){
 
 	printf("PPM File type : %s\n", pgm->pgmType);
 
@@ -284,6 +284,33 @@ void count_gray_values(PGMImage* pgm){
 }
 /////////////////////////////////////////////////////////////////Histograms///////////////////////////////////////
 //WIP
+
+//Function used to optimise output based on values of counters
+int decide_barrier(int count){
+	int num = 180;
+
+	if (count < 2000)
+		{
+			if (count > 1500)
+			{
+				num = 160;
+
+			}else if (count > 1000)
+			{
+				num = 140;
+
+			}else if(count > 500)
+			{
+				num = count/6;
+
+			}else{
+				num = count/7;
+			}
+		}
+
+	return num;
+}
+
 void show_image_histogramsPPM(PPMImage* ppm){
 
 	//red histogram
@@ -294,11 +321,8 @@ void show_image_histogramsPPM(PPMImage* ppm){
 	{
 		printf("(%d)", i);
 
-		int barrier = 180;
-		if (ppm->red_counter[i] < barrier)
-		{
-			barrier = ppm->red_counter[i];
-		}
+		int barrier = decide_barrier(ppm->red_counter[i]);
+		
 
 		for (j = 0; j < barrier; ++j)
 		{
@@ -309,28 +333,6 @@ void show_image_histogramsPPM(PPMImage* ppm){
 		
 	}
 
-	//blue histogram
-	printf("\nBLUE HISTOGRAM\nLegend:\n\'()\'->blue value\n\'[]\'->number of scaned values in image\n\n");
-
-	for (i = 0; i <= ppm->maxValue; ++i)
-	{	
-		printf("(%d)", i);
-		
-		int barrier = 180;
-		if (ppm->blue_counter[i] < barrier)
-		{
-			barrier = ppm->blue_counter[i];
-		}
-
-		for (j = 0; j < barrier; ++j)
-		{
-			printf("+");
-		}
-
-		printf("[%d]\n", ppm->blue_counter[i]);	
-		
-	}
-
 	//green histogram
 	printf("\nGREEN HISTOGRAM\nLegend:\n\'()\'->green value\n\'[]\'->number of scaned values in image\n\n");
 
@@ -338,11 +340,7 @@ void show_image_histogramsPPM(PPMImage* ppm){
 	{
 		printf("(%d)", i);
 
-		int barrier = 180;
-		if (ppm->green_counter[i] < barrier)
-		{
-			barrier = ppm->green_counter[i];
-		}
+		int barrier = decide_barrier(ppm->green_counter[i]);
 
 		for (j = 0; j < barrier; ++j)
 		{
@@ -353,6 +351,30 @@ void show_image_histogramsPPM(PPMImage* ppm){
 		
 	}
 
+	//blue histogram
+	printf("\nBLUE HISTOGRAM\nLegend:\n\'()\'->blue value\n\'[]\'->number of scaned values in image\n\n");
+
+	for (i = 0; i <= ppm->maxValue; ++i)
+	{	
+		printf("(%d)", i);
+		
+		int barrier = decide_barrier(ppm->blue_counter[i]);
+
+		for (j = 0; j < barrier; ++j)
+		{
+			printf("+");
+		}
+
+		printf("[%d]\n", ppm->blue_counter[i]);	
+		
+	}
+
+
+}
+
+void show_cumulative_image_histogramPPM(PPMImage* ppm){
+
+	int i, j;+
 
 	//cummulative histogram
 	printf("\nRGB HISTOGRAM\nLegend:\n\'()\'->color value\n\'[]\'->number of scaned values in image\n\'=\'->red\n\'+\'->blue\n\'#\'->green\n\n");
@@ -363,11 +385,7 @@ void show_image_histogramsPPM(PPMImage* ppm){
 		//red
 		printf("(%d)", i);
 
-		int barrierRED = 180;
-		if (ppm->red_counter[i] < barrierRED)
-		{
-			barrierRED = ppm->red_counter[i];
-		}
+		int barrierRED = decide_barrier(ppm->red_counter[i]);
 
 		for (j = 0; j < barrierRED; ++j)
 		{
@@ -379,11 +397,7 @@ void show_image_histogramsPPM(PPMImage* ppm){
 		//green
 		printf("(%d)", i);
 
-		int barrierGREEN = 180;
-		if (ppm->green_counter[i] < barrierGREEN)
-		{
-			barrierGREEN = ppm->green_counter[i];
-		}
+		int barrierGREEN = decide_barrier(ppm->green_counter[i]);
 
 		for (j = 0; j < barrierGREEN; ++j)
 		{
@@ -395,11 +409,7 @@ void show_image_histogramsPPM(PPMImage* ppm){
 		//blue
 		printf("(%d)", i);
 		
-		int barrierBLUE = 180;
-		if (ppm->blue_counter[i] < barrierBLUE)
-		{
-			barrierBLUE = ppm->blue_counter[i];
-		}
+		int barrierBLUE = decide_barrier(ppm->blue_counter[i]);
 
 		for (j = 0; j < barrierBLUE; ++j)
 		{
@@ -412,7 +422,7 @@ void show_image_histogramsPPM(PPMImage* ppm){
 
 }
 
-void show_image_histogramsPGM(PGMImage* pgm){
+void show_image_histogramPGM(PGMImage* pgm){
 
 	printf("GRAY HISTOGRAM\nLegend:\n\'()\'->gray value\n\'[]\'->number of scaned values in image\n\n");
 	int i, j;
@@ -421,11 +431,7 @@ void show_image_histogramsPGM(PGMImage* pgm){
 	{
 		printf("(%d)", i);
 
-		int barrierGRAY = 180;
-		if (pgm->gray_counter[i] < barrierGRAY)
-		{
-			barrierGRAY = pgm->gray_counter[i];
-		}
+		int barrierGRAY = decide_barrier(pgm->gray_counter[i]);
 
 		for (j = 0; j < barrierGRAY; ++j)
 		{
@@ -440,24 +446,20 @@ void sharpen_image_PPM(){}
 void sharpen_image_PGM(){}
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-int main(int argc, char const* argv[])
-{
-	PPMImage* ppm = malloc(sizeof(PPMImage));
-	PGMImage* pgm = malloc(sizeof(PGMImage));
-	char ipfile[1000];
-
-	scanf("%s", &ipfile);
-	printf("ip file : %s\n", ipfile);
-
+//Function used to determine wich file was used as an input to the program
+void chose_file(PPMImage* ppm, PGMImage* pgm, char ipfile[1000]){
 	// Retrieving the file extension
 
 	char* ext = strrchr(ipfile, '.');
 
-	if (!ext)
+	if (!ext){
+
 		printf("No extension found" "in file %s",ipfile);
-	else
+		return;
+
+	}else{
 		printf("File format" " : %s\n", ext + 1);
+	}
 
 
 	//Check for file type
@@ -468,10 +470,11 @@ int main(int argc, char const* argv[])
 			// PPM
 			// Process the image and print details
 
-			printImageDetailsPPM(ppm, ipfile);
+			printImageDetailsPPM(ppm);
 			//print_immagePPM(ppm);
 			count_color_values(ppm);
 			show_image_histogramsPPM(ppm);
+			show_cumulative_image_histogramPPM(ppm);
 
 		}
 
@@ -482,17 +485,29 @@ int main(int argc, char const* argv[])
 			// PGM
 			// Proces the image and print deatails
 
-			printImageDetailsPGM(pgm, ipfile);
+			printImageDetailsPGM(pgm);
 			//print_immagePGM(pgm);
 			count_gray_values(pgm);
-			show_image_histogramsPGM(pgm);
+			show_image_histogramPGM(pgm);
 		}
 
 	}else{
 		printf("Wrong file entered!\nTry .ppm or .pgm files instead.");
 	}
-	
-	
+
+}
+
+/////////////////////////////////////////////MAIN//////////////////////////////////////////////////////////////////
+int main(int argc, char const* argv[])
+{
+	PPMImage* ppm = malloc(sizeof(PPMImage));
+	PGMImage* pgm = malloc(sizeof(PGMImage));
+	char ipfile[1000];
+
+	scanf("%s", &ipfile);
+	printf("ip file : %s\n", ipfile);
+
+	chose_file(ppm, pgm, ipfile);
 
 	return 0;
 }
