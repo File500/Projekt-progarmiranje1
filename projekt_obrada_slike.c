@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+
+#define MAX_OCC 10000000
 
 // Structure for storing the PPM
 // image data 
@@ -22,8 +25,13 @@ typedef struct PPMImage {
 	int data_width;
 
 	int red_counter[256];
+	int min_red_occ;
+
 	int blue_counter[256];
+	int min_blue_occ;
+
 	int green_counter[256];
+	int min_green_occ;
 
 } PPMImage;
 
@@ -39,6 +47,7 @@ typedef struct PGMImage{
 	unsigned int maxValue;
 
 	int gray_counter[256];
+	int min_occ;
 } PGMImage;
 
 // Function to ignore any comments
@@ -62,6 +71,50 @@ void ignoreComments(FILE* fp){
 }
 
 ///////////////////////////////////////////////////////////RGB/////////////////////////////////////////////////
+
+void count_color_values(PPMImage* ppm){
+	int iterator = 0;
+	ppm->min_green_occ = ppm->min_blue_occ = ppm->min_red_occ = MAX_OCC;
+	//counting color values in triplets for each R , B and G values seperately
+	for (int i = 0; i < ppm->data_height; ++i)
+	{
+		for (int j = 0; j < ppm->data_width; ++j)
+		{
+
+			if(iterator == 0){
+				iterator++;
+				ppm->red_counter[ppm->data[i][j]]++;
+
+			}else if(iterator == 1){
+				iterator++;
+				ppm->blue_counter[ppm->data[i][j]]++;
+
+			}else{
+				iterator = 0;
+				ppm->green_counter[ppm->data[i][j]]++;
+
+			}
+		}
+	}
+
+	for (int i = 0; i <= ppm->maxValue; ++i)
+	{
+		if (ppm->red_counter[i] < ppm->min_red_occ && ppm->red_counter[i] > 0)
+		{
+			ppm->min_red_occ = ppm->red_counter[i];
+		}
+
+		if (ppm->green_counter[i] < ppm->min_green_occ && ppm->green_counter[i] > 0)
+		{
+			ppm->min_green_occ = ppm->green_counter[i];
+		}
+
+		if (ppm->blue_counter[i] < ppm->min_blue_occ && ppm->blue_counter[i] > 0)
+		{
+			ppm->min_blue_occ = ppm->blue_counter[i];
+		}
+	}
+}
 
 // Function to open the input a PPM
 // file and process it
@@ -112,6 +165,8 @@ bool openPPM(PPMImage* ppm, const char* filename){
 
 	}
 
+	count_color_values(ppm);
+
 	// Close the file
 	fclose(ppmfile);
 
@@ -157,31 +212,29 @@ void printImageDetailsPPM(PPMImage* ppm){
 	printf("Max value : %d\n\n",ppm->maxValue);
 }
 
-void count_color_values(PPMImage* ppm){
-	int iterator = 0;
-	//counting color values in triplets for each R , B and G values seperately
-	for (int i = 0; i < ppm->data_height; ++i)
+//////////////////////////////////////////////////////////////////////GRAY/////////////////////////////////////
+void count_gray_values(PGMImage* pgm){
+
+	//counting gray values
+	pgm->min_occ = 10000000;
+	for (int i = 0; i < pgm->height; ++i)
 	{
-		for (int j = 0; j < ppm->data_width; ++j)
+		for (int j = 0; j < pgm->width; ++j)
 		{
-
-			if(iterator == 0){
-				iterator++;
-				ppm->red_counter[ppm->data[i][j]]++;
-
-			}else if(iterator == 1){
-				iterator++;
-				ppm->blue_counter[ppm->data[i][j]]++;
-
-			}else{
-				iterator = 0;
-				ppm->green_counter[ppm->data[i][j]]++;
-
-			}
+			pgm->gray_counter[pgm->data[i][j]]++;
 		}
 	}
+
+	for (int i = 0; i <= pgm->maxValue; ++i)
+	{
+		if (pgm->gray_counter[i] < pgm->min_occ && pgm->gray_counter[i] > 0)
+		{
+			pgm->min_occ = pgm->gray_counter[i];
+		}
+	}
+
 }
-//////////////////////////////////////////////////////////////////////GRAY/////////////////////////////////////
+
 bool openPGM(PGMImage* pgm, const char* filename){
 
 	// Open the image file in the
@@ -225,6 +278,8 @@ bool openPGM(PGMImage* pgm, const char* filename){
 		}
 
 	}
+
+	count_gray_values(pgm);
 
 	// Close the file
 	fclose(pgmfile);
@@ -272,20 +327,8 @@ void print_immagePGM(PGMImage* pgm){
 	printf("\n");
 }
 
-void count_gray_values(PGMImage* pgm){
 
-	//counting gray values
-	for (int i = 0; i < pgm->height; ++i)
-	{
-		for (int j = 0; j < pgm->width; ++j)
-		{
-			pgm->gray_counter[pgm->data[i][j]]++;
-		}
-	}
-}
 /////////////////////////////////////////////////////////////////Histograms///////////////////////////////////////
-//WIP
-
 //Function used to optimise output based on values of counters
 int decide_barrier(int count){
 	int num = 180;
@@ -442,9 +485,73 @@ void show_image_histogramPGM(PGMImage* pgm){
 		printf("[%d]\n", pgm->gray_counter[i]);
 	}
 }
+//////////////////////////////////////Image Sharpening////////////////////////////////////////////////////////////////////
+int optimisePGM(PGMImage* pgm, int pos){
 
-void sharpen_image_PPM(){}
-void sharpen_image_PGM(){}
+	double h_val = 0.0;
+	int opti = 0;
+	int cdf = 0;
+
+	for (int i = 0; i <= pos; ++i)
+	{
+		cdf += pgm->gray_counter[i];
+	}
+
+	double a = (cdf - pgm->min_occ);
+	double b = ((pgm->height * pgm->width) - pgm->min_occ);
+
+	h_val =  (a / b)  * pgm->maxValue;
+
+	h_val = round(h_val);
+
+	opti = (int)h_val;
+
+	return opti;
+}
+
+void sharpen_image_PGM(PGMImage* pgm){
+	FILE* newimmage = fopen("SharpenedGRAYimage.pgm", "w"); //umjesto txt napisati pgm
+	//fprintf za pisati
+
+	//temporary field for new image pix values
+	int new_val_table[256];
+
+	memset(new_val_table, 0, sizeof(new_val_table));
+
+	if (newimmage == NULL)
+	{
+		printf("File creation failed!");
+		return;
+	}
+
+	//normalization of values
+	for (int i = 0; i <= pgm->maxValue; ++i)
+	{
+		int new_pix_val = optimisePGM(pgm, i);
+		new_val_table[i] = new_pix_val;
+	}
+
+	//new image creation
+	fprintf(newimmage, "%s\n%d %d\n%d\n", pgm->pgmType, pgm->width, pgm->height, pgm->maxValue);
+
+	for (int i = 0; i < pgm->height; ++i)
+	{
+		for (int j = 0; j < pgm->width; ++j)
+		{
+			int inputVal = new_val_table[pgm->data[i][j]];
+
+			fprintf(newimmage, "%d ", inputVal);
+		}
+
+		fprintf(newimmage, "\n");
+	}
+
+	fclose(newimmage);
+
+}
+
+//WIP
+void sharpen_image_PPM(PPMImage* ppm){}
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Function used to determine wich file was used as an input to the program
@@ -473,10 +580,9 @@ void chose_file(PPMImage* ppm, PGMImage* pgm, char ipfile[1000]){
 
 			printImageDetailsPPM(ppm);
 			//print_immagePPM(ppm);
-			count_color_values(ppm);
 			show_image_histogramsPPM(ppm);
 			show_cumulative_image_histogramPPM(ppm);
-
+			sharpen_image_PPM(ppm);
 		}
 
 	}else if (strcmp(ext+1, "pgm") == 0){
@@ -488,8 +594,8 @@ void chose_file(PPMImage* ppm, PGMImage* pgm, char ipfile[1000]){
 
 			printImageDetailsPGM(pgm);
 			//print_immagePGM(pgm);
-			count_gray_values(pgm);
 			show_image_histogramPGM(pgm);
+			sharpen_image_PGM(pgm);
 		}
 
 	}else{
