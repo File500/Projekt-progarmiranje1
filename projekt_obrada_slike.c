@@ -16,6 +16,8 @@ typedef struct PPMImage {
 
 	char ppmType[3];
 	int data[1000][1000];
+	int dataHSL[1000][1000];
+	int sharpRGB[1000][1000];
 
 	unsigned int width;
 	unsigned int height;
@@ -87,11 +89,11 @@ void count_color_values(PPMImage* ppm){
 
 			}else if(iterator == 1){
 				iterator++;
-				ppm->blue_counter[ppm->data[i][j]]++;
+				ppm->green_counter[ppm->data[i][j]]++;
 
 			}else{
 				iterator = 0;
-				ppm->green_counter[ppm->data[i][j]]++;
+				ppm->blue_counter[ppm->data[i][j]]++;
 
 			}
 		}
@@ -355,6 +357,19 @@ int decide_barrier(int count){
 	return num;
 }
 
+int decide_barrier_cumulative(int count){
+
+	int number = 180;
+	
+	if (count > 40000)
+	{
+		return number;
+	}
+
+	number = count / 223;
+	return number;
+}
+
 void show_image_histogramsPPM(PPMImage* ppm){
 
 	//red histogram
@@ -418,50 +433,63 @@ void show_image_histogramsPPM(PPMImage* ppm){
 
 void show_cumulative_image_histogramPPM(PPMImage* ppm){
 
-	int i, j;+
+	int i, j;
+	int cdfRED = 0, cdfGREEN = 0, cdfBLUE = 0;
 
 	//cummulative histogram
-	printf("\nRGB HISTOGRAM\nLegend:\n\'()\'->color value\n\'[]\'->number of scaned values in image\n\'=\'->red\n\'+\'->blue\n\'#\'->green\n\n");
+	printf("\nRED CUMULATIVE HISTOGRAM\n\n");
 
 	for (i = 0; i <= ppm->maxValue; ++i)
 	{
+		cdfRED += ppm->red_counter[i];
 
 		//red
 		printf("(%d)", i);
 
-		int barrierRED = decide_barrier(ppm->red_counter[i]);
+		int barrierRED = decide_barrier_cumulative(cdfRED);
 
 		for (j = 0; j < barrierRED; ++j)
 		{
-			printf("=");
+			printf(" ");
 		}
 
-		printf("[%d]\n", ppm->red_counter[i]);	
+		printf("=\n");	
+	}
 
+	printf("\nGREEN CUMULATIVE HISTOGRAM\n\n");
+
+	for (int i = 0; i <= ppm->maxValue; ++i)
+	{
+		cdfGREEN += ppm->green_counter[i];
 		//green
 		printf("(%d)", i);
 
-		int barrierGREEN = decide_barrier(ppm->green_counter[i]);
+		int barrierGREEN = decide_barrier_cumulative(cdfGREEN);
 
 		for (j = 0; j < barrierGREEN; ++j)
 		{
-			printf("#");
+			printf(" ");
 		}
 
-		printf("[%d]\n", ppm->green_counter[i]);
+		printf("#\n");
+	}
 
+	printf("\nBLUE CUMULATIVE HISTOGRAM\n\n");
+
+	for (int i = 0; i <= ppm->maxValue; ++i)
+	{
+		cdfBLUE += ppm->blue_counter[i];
 		//blue
 		printf("(%d)", i);
 		
-		int barrierBLUE = decide_barrier(ppm->blue_counter[i]);
+		int barrierBLUE = decide_barrier_cumulative(cdfBLUE);
 
 		for (j = 0; j < barrierBLUE; ++j)
 		{
-			printf("+");
+			printf(" ");
 		}
 
-		printf("[%d]\n", ppm->blue_counter[i]);	
-		
+		printf("+\n");	
 	}
 
 }
@@ -484,6 +512,33 @@ void show_image_histogramPGM(PGMImage* pgm){
 
 		printf("[%d]\n", pgm->gray_counter[i]);
 	}
+}
+
+void show_cumulative_image_histogramPGM(PGMImage* pgm){
+
+	int i, j;
+	int cdfGRAY = 0;
+
+	//cummulative histogram
+	printf("\nGRAY CUMULATIVE HISTOGRAM\n\n");
+
+	for (i = 0; i <= pgm->maxValue; ++i)
+	{
+		cdfGRAY += pgm->gray_counter[i];
+
+		//red
+		printf("(%d)", i);
+
+		int barrierGRAY = decide_barrier_cumulative(cdfGRAY);
+
+		for (j = 0; j < barrierGRAY; ++j)
+		{
+			printf(" ");
+		}
+
+		printf("=\n");	
+	}
+
 }
 //////////////////////////////////////Image Sharpening////////////////////////////////////////////////////////////////////
 int optimisePGM(PGMImage* pgm, int pos){
@@ -510,8 +565,7 @@ int optimisePGM(PGMImage* pgm, int pos){
 }
 
 void sharpen_image_PGM(PGMImage* pgm){
-	FILE* newimmage = fopen("SharpenedGRAYimage.pgm", "w"); //umjesto txt napisati pgm
-	//fprintf za pisati
+	FILE* newimmage = fopen("SharpenedGRAYimage.pgm", "w"); 
 
 	//temporary field for new image pix values
 	int new_val_table[256];
@@ -551,7 +605,53 @@ void sharpen_image_PGM(PGMImage* pgm){
 }
 
 //WIP
-void sharpen_image_PPM(PPMImage* ppm){}
+
+void RGB_to_HSL(PPMImage* ppm){}
+
+int optimisePPM(PPMImage* ppm, int pos, int RGB){
+
+	double h_val = 0.0;
+	int opti = 0;
+
+	return opti;
+
+}
+
+void sharpen_image_PPM(PPMImage* ppm){
+
+	FILE* newimmage = fopen("SharpenedCOLOREDimage.pgm", "w");
+
+	RGB_to_HSL(ppm); 
+
+	int iterator = 0;
+
+	//temporary fields for new image pix values
+
+	if (newimmage == NULL)
+	{
+		printf("File creation failed!");
+		return;
+	}
+
+	//new image creation
+	fprintf(newimmage, "%s\n%d %d\n%d\n", ppm->ppmType, ppm->width, ppm->height, ppm->maxValue);
+
+	for (int i = 0; i < ppm->data_height; ++i)
+	{
+		for (int j = 0; j < ppm->data_width; ++j)
+		{
+
+			int inputVal = 0;
+
+			fprintf(newimmage, "%d ", inputVal);
+		}
+
+		fprintf(newimmage, "\n");
+	}
+
+	fclose(newimmage);
+
+}
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Function used to determine wich file was used as an input to the program
@@ -579,10 +679,10 @@ void chose_file(PPMImage* ppm, PGMImage* pgm, char ipfile[1000]){
 			// Process the image and print details
 
 			printImageDetailsPPM(ppm);
-			//print_immagePPM(ppm);
+			//print_immagePPM(ppm); //can be used if needed to check if data was read properly
 			show_image_histogramsPPM(ppm);
 			show_cumulative_image_histogramPPM(ppm);
-			sharpen_image_PPM(ppm);
+			//sharpen_image_PPM(ppm);
 		}
 
 	}else if (strcmp(ext+1, "pgm") == 0){
@@ -593,8 +693,9 @@ void chose_file(PPMImage* ppm, PGMImage* pgm, char ipfile[1000]){
 			// Proces the image and print deatails
 
 			printImageDetailsPGM(pgm);
-			//print_immagePGM(pgm);
+			//print_immagePGM(pgm); //can be used if needed to check if data was read properly
 			show_image_histogramPGM(pgm);
+			show_cumulative_image_histogramPGM(pgm);
 			sharpen_image_PGM(pgm);
 		}
 
