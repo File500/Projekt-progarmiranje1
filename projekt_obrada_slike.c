@@ -7,14 +7,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-
+//constants used to transfer rbg to grayscale
+#define R_multipyer 0.3
+#define G_multipyer 0.59
+#define B_multipyer 0.11
 // Structure for storing the PPM
 // image data 
 typedef struct PPMImage {
 
 	char ppmType[3];
 	int data[1000][1000];
-	int dataHSL[1000][1000];
+	int dataGRAY[1000][1000];
 	int sharpRGB[1000][1000];
 
 	unsigned int width;
@@ -25,13 +28,10 @@ typedef struct PPMImage {
 	int data_width;
 
 	int red_counter[256];
-	int min_red_occ;
-
 	int blue_counter[256];
-	int min_blue_occ;
-
 	int green_counter[256];
-	int min_green_occ;
+	int GRAYcounter[256];
+	int min_occ;
 
 } PPMImage;
 
@@ -405,19 +405,12 @@ void show_cumulative_image_histogramPPM(PPMImage* ppm){
 
 	int i, j;
 	int cdfRED = 0, cdfGREEN = 0, cdfBLUE = 0;
-	ppm->min_red_occ = ppm->min_green_occ = ppm->min_blue_occ = 0;
 	//cummulative histogram
 	printf("\nRED CUMULATIVE HISTOGRAM\n\n");
 
 	for (i = 0; i <= ppm->maxValue; ++i)
 	{
 		cdfRED += ppm->red_counter[i];
-
-		if (cdfRED > 0 && ppm->min_red_occ == 0)
-		{
-			ppm->min_red_occ = cdfRED;
-		}
-
 		//red
 		printf("(%d)", i);
 
@@ -436,12 +429,6 @@ void show_cumulative_image_histogramPPM(PPMImage* ppm){
 	for (int i = 0; i <= ppm->maxValue; ++i)
 	{
 		cdfGREEN += ppm->green_counter[i];
-
-		if (cdfGREEN > 0 && ppm->min_green_occ == 0)
-		{
-			ppm->min_green_occ = cdfGREEN;
-		}
-
 		//green
 		printf("(%d)", i);
 
@@ -460,12 +447,6 @@ void show_cumulative_image_histogramPPM(PPMImage* ppm){
 	for (int i = 0; i <= ppm->maxValue; ++i)
 	{
 		cdfBLUE += ppm->blue_counter[i];
-
-		if (cdfBLUE > 0 && ppm->min_blue_occ == 0)
-		{
-			ppm->min_blue_occ = cdfBLUE;
-		}
-
 		//blue
 		printf("(%d)", i);
 		
@@ -599,45 +580,25 @@ void sharpen_image_PGM(PGMImage* pgm){
 
 //WIP
 
-void RGB_to_HSL(PPMImage* ppm){}
-
-int optimisePPM(PPMImage* ppm, int pos, int RGB){
+int optimisePPM(PPMImage* ppm, int pos){
 
 	double h_val = 0.0;
 	int opti = 0;
 	int cdf = 0;
-	double a, b;
+	ppm->min_occ = 0;
 
-	if (RGB == 0)
+	for (int i = 0; i <= pos; ++i)
 	{
-		for (int i = 0; i <= pos; ++i)
+		cdf += ppm->GRAYcounter[i];
+
+		if (cdf > 0 && ppm->min_occ == 0)
 		{
-			cdf += ppm->red_counter[i];
+			ppm->min_occ = cdf;
 		}
-
-		a = (cdf - ppm->min_red_occ);
-		b = ((ppm->height * ppm->width) - ppm->min_red_occ);
-
-	}else if(RGB == 1){
-
-		for (int i = 0; i <= pos; ++i)
-		{
-			cdf += ppm->blue_counter[i];
-		}
-
-		a = (cdf - ppm->min_green_occ);
-		b = ((ppm->height * ppm->width) - ppm->min_green_occ);
-
-	}else{
-
-		for (int i = 0; i <= pos; ++i)
-		{
-			cdf += ppm->green_counter[i];
-		}
-
-		a = (cdf - ppm->min_blue_occ);
-		b = ((ppm->height * ppm->width) - ppm->min_blue_occ);
 	}
+
+	double a = (cdf - ppm->min_occ);
+	double b = ((ppm->height * ppm->width) - ppm->min_occ);
 
 	h_val =  (a / b)  * ppm->maxValue;
 
@@ -648,48 +609,50 @@ int optimisePPM(PPMImage* ppm, int pos, int RGB){
 	return opti;
 }
 
-void sharpen_image_PPM(PPMImage* ppm){
+void RGB_to_GRAY(PPMImage* ppm){
+	double grayscale;
+	int newPix;
+	int gray_i = 0, gray_j = 0;
+	int new_val_table[256];
 
-	FILE* newimmage = fopen("SharpenedCOLOREDimage.pgm", "w");
-
-	int iterator = 0;
-	int inputVal;
-
-	//temporary fields for new image pix values
-	int new_val_tableRED[256], new_val_tableGREEN[256], new_val_tableBLUE[256];
-
-	if (newimmage == NULL)
+	for (int i = 0; i < ppm->data_height; ++i)
 	{
-		printf("File creation failed!");
-		return;
+		for (int j = 0; j < ppm->data_width; j+=3)
+		{
+			grayscale = R_multipyer * ppm->data[i][j] + G_multipyer * ppm->data[i][j+1] + B_multipyer * ppm->data[i][j+2];
+			newPix = (int)grayscale;
+
+			ppm->dataGRAY[gray_i][gray_j] = newPix;
+			ppm->GRAYcounter[newPix]++;
+
+			gray_j++;
+		}
+
+		gray_i++;
 	}
 
-	//normalization of values
 	for (int i = 0; i <= ppm->maxValue; ++i)
 	{
-		int new_pix_val = optimisePPM(ppm, i, iterator);
-		
-		if (iterator == 0)
+		int new_pix_val = optimisePPM(ppm, i);
+		new_val_table[i] = new_pix_val;
+	}
+
+	for (int i = 0; i < ppm->height; ++i)
+	{
+		for (int j = 0; j < ppm->width; ++j)
 		{
-			iterator++;
-			new_val_tableRED[i] = new_pix_val;
-
-		}else if (iterator == 1)
-		{
-			iterator++;
-			new_val_tableGREEN[i] = new_pix_val; 
-
-		}else{
-
-			iterator = 0;
-			new_val_tableBLUE[i] = new_pix_val;
+			ppm->dataGRAY[i][j] = new_val_table[ppm->dataGRAY[i][j]];
 		}
 	}
 
-	iterator = 0;
+}
 
-	//new image creation
-	fprintf(newimmage, "%s\n%d %d\n%d\n", ppm->ppmType, ppm->width, ppm->height, ppm->maxValue);
+void GRAY_to_RGB(PPMImage* ppm){
+
+	double newRED, newGREEN, newBLUE;
+	int R, G, B;
+	int iterator = 0;
+	int gray_iterator = 0;
 
 	for (int i = 0; i < ppm->data_height; ++i)
 	{
@@ -698,18 +661,53 @@ void sharpen_image_PPM(PPMImage* ppm){
 			if (iterator == 0)
 			{
 				iterator++;
-				inputVal = new_val_tableRED[ppm->data[i][j]];
+				newRED = ppm->dataGRAY[i][gray_iterator] / 3;
+				R = (int)newRED;
+				ppm->sharpRGB[i][j] = R;
 
 			}else if (iterator == 1)
 			{
 				iterator++;
-				inputVal = new_val_tableGREEN[ppm->data[i][j]];
+				newGREEN = ppm->dataGRAY[i][gray_iterator] / 2;
+				G = (int)newGREEN;
+				ppm->sharpRGB[i][j] = G;
 
 			}else{
-				iterator = 0;
-				inputVal = new_val_tableBLUE[ppm->data[i][j]];
-			}
 
+				
+				newBLUE = ppm->dataGRAY[i][gray_iterator] / 10;
+				B = (int)newBLUE;
+				ppm->sharpRGB[i][j] = B;
+
+				iterator=0;
+				gray_iterator++;
+
+			}
+		}
+	}
+}
+
+void sharpen_image_PPM(PPMImage* ppm){
+
+	FILE* newimmage = fopen("SharpenedCOLOREDimage.pgm", "w");
+
+	if (newimmage == NULL)
+	{
+		printf("File creation failed!");
+		return;
+	}
+
+	RGB_to_GRAY(ppm);
+	GRAY_to_RGB(ppm);
+
+	//new image creation
+	fprintf(newimmage, "%s\n%d %d\n%d\n", ppm->ppmType, ppm->width, ppm->height, ppm->maxValue);
+
+	for (int i = 0; i < ppm->data_height; ++i)
+	{
+		for (int j = 0; j < ppm->data_width; ++j)
+		{
+			int inputVal = ppm->sharpRGB[i][j];
 			fprintf(newimmage, "%d ", inputVal);
 		}
 
