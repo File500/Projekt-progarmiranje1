@@ -8,8 +8,6 @@
 #include <string.h>
 #include <math.h>
 
-#define MAX_OCC 10000000
-
 // Structure for storing the PPM
 // image data 
 typedef struct PPMImage {
@@ -76,7 +74,6 @@ void ignoreComments(FILE* fp){
 
 void count_color_values(PPMImage* ppm){
 	int iterator = 0;
-	ppm->min_green_occ = ppm->min_blue_occ = ppm->min_red_occ = MAX_OCC;
 	//counting color values in triplets for each R , B and G values seperately
 	for (int i = 0; i < ppm->data_height; ++i)
 	{
@@ -96,24 +93,6 @@ void count_color_values(PPMImage* ppm){
 				ppm->blue_counter[ppm->data[i][j]]++;
 
 			}
-		}
-	}
-
-	for (int i = 0; i <= ppm->maxValue; ++i)
-	{
-		if (ppm->red_counter[i] < ppm->min_red_occ && ppm->red_counter[i] > 0)
-		{
-			ppm->min_red_occ = ppm->red_counter[i];
-		}
-
-		if (ppm->green_counter[i] < ppm->min_green_occ && ppm->green_counter[i] > 0)
-		{
-			ppm->min_green_occ = ppm->green_counter[i];
-		}
-
-		if (ppm->blue_counter[i] < ppm->min_blue_occ && ppm->blue_counter[i] > 0)
-		{
-			ppm->min_blue_occ = ppm->blue_counter[i];
 		}
 	}
 }
@@ -218,20 +197,11 @@ void printImageDetailsPPM(PPMImage* ppm){
 void count_gray_values(PGMImage* pgm){
 
 	//counting gray values
-	pgm->min_occ = 10000000;
 	for (int i = 0; i < pgm->height; ++i)
 	{
 		for (int j = 0; j < pgm->width; ++j)
 		{
 			pgm->gray_counter[pgm->data[i][j]]++;
-		}
-	}
-
-	for (int i = 0; i <= pgm->maxValue; ++i)
-	{
-		if (pgm->gray_counter[i] < pgm->min_occ && pgm->gray_counter[i] > 0)
-		{
-			pgm->min_occ = pgm->gray_counter[i];
 		}
 	}
 
@@ -435,13 +405,18 @@ void show_cumulative_image_histogramPPM(PPMImage* ppm){
 
 	int i, j;
 	int cdfRED = 0, cdfGREEN = 0, cdfBLUE = 0;
-
+	ppm->min_red_occ = ppm->min_green_occ = ppm->min_blue_occ = 0;
 	//cummulative histogram
 	printf("\nRED CUMULATIVE HISTOGRAM\n\n");
 
 	for (i = 0; i <= ppm->maxValue; ++i)
 	{
 		cdfRED += ppm->red_counter[i];
+
+		if (cdfRED > 0 && ppm->min_red_occ == 0)
+		{
+			ppm->min_red_occ = cdfRED;
+		}
 
 		//red
 		printf("(%d)", i);
@@ -461,6 +436,12 @@ void show_cumulative_image_histogramPPM(PPMImage* ppm){
 	for (int i = 0; i <= ppm->maxValue; ++i)
 	{
 		cdfGREEN += ppm->green_counter[i];
+
+		if (cdfGREEN > 0 && ppm->min_green_occ == 0)
+		{
+			ppm->min_green_occ = cdfGREEN;
+		}
+
 		//green
 		printf("(%d)", i);
 
@@ -479,6 +460,12 @@ void show_cumulative_image_histogramPPM(PPMImage* ppm){
 	for (int i = 0; i <= ppm->maxValue; ++i)
 	{
 		cdfBLUE += ppm->blue_counter[i];
+
+		if (cdfBLUE > 0 && ppm->min_blue_occ == 0)
+		{
+			ppm->min_blue_occ = cdfBLUE;
+		}
+
 		//blue
 		printf("(%d)", i);
 		
@@ -518,6 +505,7 @@ void show_cumulative_image_histogramPGM(PGMImage* pgm){
 
 	int i, j;
 	int cdfGRAY = 0;
+	pgm->min_occ = 0;
 
 	//cummulative histogram
 	printf("\nGRAY CUMULATIVE HISTOGRAM\n\n");
@@ -525,6 +513,11 @@ void show_cumulative_image_histogramPGM(PGMImage* pgm){
 	for (i = 0; i <= pgm->maxValue; ++i)
 	{
 		cdfGRAY += pgm->gray_counter[i];
+
+		if (cdfGRAY > 0 && pgm->min_occ == 0)
+		{
+			pgm->min_occ = cdfGRAY;
+		}
 
 		//red
 		printf("(%d)", i);
@@ -612,26 +605,88 @@ int optimisePPM(PPMImage* ppm, int pos, int RGB){
 
 	double h_val = 0.0;
 	int opti = 0;
+	int cdf = 0;
+	double a, b;
+
+	if (RGB == 0)
+	{
+		for (int i = 0; i <= pos; ++i)
+		{
+			cdf += ppm->red_counter[i];
+		}
+
+		a = (cdf - ppm->min_red_occ);
+		b = ((ppm->height * ppm->width) - ppm->min_red_occ);
+
+	}else if(RGB == 1){
+
+		for (int i = 0; i <= pos; ++i)
+		{
+			cdf += ppm->blue_counter[i];
+		}
+
+		a = (cdf - ppm->min_green_occ);
+		b = ((ppm->height * ppm->width) - ppm->min_green_occ);
+
+	}else{
+
+		for (int i = 0; i <= pos; ++i)
+		{
+			cdf += ppm->green_counter[i];
+		}
+
+		a = (cdf - ppm->min_blue_occ);
+		b = ((ppm->height * ppm->width) - ppm->min_blue_occ);
+	}
+
+	h_val =  (a / b)  * ppm->maxValue;
+
+	h_val = round(h_val);
+
+	opti = (int)h_val;
 
 	return opti;
-
 }
 
 void sharpen_image_PPM(PPMImage* ppm){
 
 	FILE* newimmage = fopen("SharpenedCOLOREDimage.pgm", "w");
 
-	RGB_to_HSL(ppm); 
-
 	int iterator = 0;
+	int inputVal;
 
 	//temporary fields for new image pix values
+	int new_val_tableRED[256], new_val_tableGREEN[256], new_val_tableBLUE[256];
 
 	if (newimmage == NULL)
 	{
 		printf("File creation failed!");
 		return;
 	}
+
+	//normalization of values
+	for (int i = 0; i <= ppm->maxValue; ++i)
+	{
+		int new_pix_val = optimisePPM(ppm, i, iterator);
+		
+		if (iterator == 0)
+		{
+			iterator++;
+			new_val_tableRED[i] = new_pix_val;
+
+		}else if (iterator == 1)
+		{
+			iterator++;
+			new_val_tableGREEN[i] = new_pix_val; 
+
+		}else{
+
+			iterator = 0;
+			new_val_tableBLUE[i] = new_pix_val;
+		}
+	}
+
+	iterator = 0;
 
 	//new image creation
 	fprintf(newimmage, "%s\n%d %d\n%d\n", ppm->ppmType, ppm->width, ppm->height, ppm->maxValue);
@@ -640,8 +695,20 @@ void sharpen_image_PPM(PPMImage* ppm){
 	{
 		for (int j = 0; j < ppm->data_width; ++j)
 		{
+			if (iterator == 0)
+			{
+				iterator++;
+				inputVal = new_val_tableRED[ppm->data[i][j]];
 
-			int inputVal = 0;
+			}else if (iterator == 1)
+			{
+				iterator++;
+				inputVal = new_val_tableGREEN[ppm->data[i][j]];
+
+			}else{
+				iterator = 0;
+				inputVal = new_val_tableBLUE[ppm->data[i][j]];
+			}
 
 			fprintf(newimmage, "%d ", inputVal);
 		}
@@ -682,7 +749,7 @@ void chose_file(PPMImage* ppm, PGMImage* pgm, char ipfile[1000]){
 			//print_immagePPM(ppm); //can be used if needed to check if data was read properly
 			show_image_histogramsPPM(ppm);
 			show_cumulative_image_histogramPPM(ppm);
-			//sharpen_image_PPM(ppm);
+			sharpen_image_PPM(ppm);
 		}
 
 	}else if (strcmp(ext+1, "pgm") == 0){
