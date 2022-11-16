@@ -7,10 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-//constants used to transfer rbg to grayscale
-#define R_multipyer 0.3
-#define G_multipyer 0.59
-#define B_multipyer 0.11
+
 // Structure for storing the PPM
 // image data 
 typedef struct PPMImage {
@@ -606,7 +603,7 @@ void optimisePPM(PPMImage* ppm){
 
 void sharpen_image_PPM(PPMImage* ppm){
 
-	FILE* newimmage = fopen("SharpenedCOLOREDimage.pgm", "w");
+	FILE* newimmage = fopen("SharpenedCOLOREDimage.ppm", "w");
 
 	if (newimmage == NULL)
 	{
