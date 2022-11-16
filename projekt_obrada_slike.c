@@ -346,7 +346,6 @@ void show_image_histogramsPPM(PPMImage* ppm){
 
 		int barrier = decide_barrier(ppm->red_counter[i]);
 		
-
 		for (j = 0; j < barrier; ++j)
 		{
 			printf("=");
@@ -395,7 +394,7 @@ void show_image_histogramsPPM(PPMImage* ppm){
 
 }
 
-void show_cumulative_image_histogramPPM(PPMImage* ppm){
+void show_cumulative_image_histogramsPPM(PPMImage* ppm){
 
 	int i, j;
 	int cdfRED = 0, cdfGREEN = 0, cdfBLUE = 0;
@@ -494,7 +493,6 @@ void show_cumulative_image_histogramPGM(PGMImage* pgm){
 			pgm->min_occ = cdfGRAY;
 		}
 
-		//red
 		printf("(%d)", i);
 
 		int barrierGRAY = decide_barrier_cumulative(cdfGRAY);
@@ -511,6 +509,8 @@ void show_cumulative_image_histogramPGM(PGMImage* pgm){
 ////////////////////////////////////////////////Image Sharpening////////////////////////////////////////////////
 int optimisePGM(PGMImage* pgm, int pos){
 
+	//function used to normalize histogram and use it to 
+	//sharpen the image 
 	double h_val = 0.0;
 	int opti = 0;
 	int cdf = 0;
@@ -575,6 +575,8 @@ void sharpen_image_PGM(PGMImage* pgm){
 void optimisePPM(PPMImage* ppm){
 
 	//sharpening pixels using their neghbours
+	//method used for gray image doesn't apply to RGB picture
+	//so we can use alternative method 
 	int iterator = 0;
 
 	for (int i = 0; i < ppm->data_height; ++i)
@@ -598,8 +600,6 @@ void optimisePPM(PPMImage* ppm){
 		}
 	}
 }
-
-
 
 void sharpen_image_PPM(PPMImage* ppm){
 
@@ -655,11 +655,11 @@ void chose_file(PPMImage* ppm, PGMImage* pgm, char ipfile[1000]){
 
 			// PPM
 			// Process the image and print details
-
+			// uncomment next line to check if data was read properly
+			//print_immagePPM(ppm); 
 			printImageDetailsPPM(ppm);
-			//print_immagePPM(ppm); //can be used if needed to check if data was read properly
 			show_image_histogramsPPM(ppm);
-			show_cumulative_image_histogramPPM(ppm);
+			show_cumulative_image_histogramsPPM(ppm);
 			sharpen_image_PPM(ppm);
 		}
 
@@ -669,9 +669,9 @@ void chose_file(PPMImage* ppm, PGMImage* pgm, char ipfile[1000]){
 
 			// PGM
 			// Proces the image and print deatails
-
+			// uncomment next line to check if data was read properly
+			//print_immagePGM(pgm); 
 			printImageDetailsPGM(pgm);
-			//print_immagePGM(pgm); //can be used if needed to check if data was read properly
 			show_image_histogramPGM(pgm);
 			show_cumulative_image_histogramPGM(pgm);
 			sharpen_image_PGM(pgm);
