@@ -17,7 +17,6 @@ typedef struct PPMImage {
 
 	char ppmType[3];
 	int data[1000][1000];
-	int dataGRAY[1000][1000];
 	int sharpRGB[1000][1000];
 
 	unsigned int width;
@@ -30,8 +29,6 @@ typedef struct PPMImage {
 	int red_counter[256];
 	int blue_counter[256];
 	int green_counter[256];
-	int GRAYcounter[256];
-	int min_occ;
 
 } PPMImage;
 
@@ -514,7 +511,7 @@ void show_cumulative_image_histogramPGM(PGMImage* pgm){
 	}
 
 }
-//////////////////////////////////////Image Sharpening////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////Image Sharpening////////////////////////////////////////////////
 int optimisePGM(PGMImage* pgm, int pos){
 
 	double h_val = 0.0;
@@ -578,114 +575,34 @@ void sharpen_image_PGM(PGMImage* pgm){
 
 }
 
-//WIP
+void optimisePPM(PPMImage* ppm){
 
-int optimisePPM(PPMImage* ppm, int pos){
-
-	double h_val = 0.0;
-	int opti = 0;
-	int cdf = 0;
-	ppm->min_occ = 0;
-
-	for (int i = 0; i <= pos; ++i)
-	{
-		cdf += ppm->GRAYcounter[i];
-
-		if (cdf > 0 && ppm->min_occ == 0)
-		{
-			ppm->min_occ = cdf;
-		}
-	}
-
-	double a = (cdf - ppm->min_occ);
-	double b = ((ppm->height * ppm->width) - ppm->min_occ);
-
-	h_val =  (a / b)  * ppm->maxValue;
-
-	h_val = round(h_val);
-
-	opti = (int)h_val;
-
-	return opti;
-}
-
-void RGB_to_GRAY(PPMImage* ppm){
-	double grayscale;
-	int newPix;
-	int gray_i = 0, gray_j = 0;
-	int new_val_table[256];
-
-	for (int i = 0; i < ppm->data_height; ++i)
-	{
-		for (int j = 0; j < ppm->data_width; j+=3)
-		{
-			grayscale = R_multipyer * ppm->data[i][j] + G_multipyer * ppm->data[i][j+1] + B_multipyer * ppm->data[i][j+2];
-			newPix = (int)grayscale;
-
-			ppm->dataGRAY[gray_i][gray_j] = newPix;
-			ppm->GRAYcounter[newPix]++;
-
-			gray_j++;
-		}
-
-		gray_i++;
-	}
-
-	for (int i = 0; i <= ppm->maxValue; ++i)
-	{
-		int new_pix_val = optimisePPM(ppm, i);
-		new_val_table[i] = new_pix_val;
-	}
-
-	for (int i = 0; i < ppm->height; ++i)
-	{
-		for (int j = 0; j < ppm->width; ++j)
-		{
-			ppm->dataGRAY[i][j] = new_val_table[ppm->dataGRAY[i][j]];
-		}
-	}
-
-}
-
-void GRAY_to_RGB(PPMImage* ppm){
-
-	double newRED, newGREEN, newBLUE;
-	int R, G, B;
+	//sharpening pixels using their neghbours
 	int iterator = 0;
-	int gray_iterator = 0;
 
 	for (int i = 0; i < ppm->data_height; ++i)
 	{
 		for (int j = 0; j < ppm->data_width; ++j)
 		{
-			if (iterator == 0)
+			if ((i == 0 || i == ppm->data_height - 1) || (j < 3 || j >= ppm->data_width - 3))
 			{
-				iterator++;
-				newRED = ppm->dataGRAY[i][gray_iterator] / 3;
-				R = (int)newRED;
-				ppm->sharpRGB[i][j] = R;
-
-			}else if (iterator == 1)
-			{
-				iterator++;
-				newGREEN = ppm->dataGRAY[i][gray_iterator] / 2;
-				G = (int)newGREEN;
-				ppm->sharpRGB[i][j] = G;
+				ppm->sharpRGB[i][j] = ppm->data[i][j];
 
 			}else{
-
 				
-				newBLUE = ppm->dataGRAY[i][gray_iterator] / 10;
-				B = (int)newBLUE;
-				ppm->sharpRGB[i][j] = B;
-
-				iterator=0;
-				gray_iterator++;
-
+				int current = ppm->data[i][j];
+				int up = ppm->data[i-1][j];
+				int down = ppm->data[i+1][j];
+				int left = ppm->data[i][j-3];
+				int right = ppm->data[i][j+3]; 
+				
+				ppm->sharpRGB[i][j] = 5*current - left - right - up - down;
 			}
 		}
 	}
 }
+
+
 
 void sharpen_image_PPM(PPMImage* ppm){
 
@@ -697,8 +614,7 @@ void sharpen_image_PPM(PPMImage* ppm){
 		return;
 	}
 
-	RGB_to_GRAY(ppm);
-	GRAY_to_RGB(ppm);
+	optimisePPM(ppm);
 
 	//new image creation
 	fprintf(newimmage, "%s\n%d %d\n%d\n", ppm->ppmType, ppm->width, ppm->height, ppm->maxValue);
