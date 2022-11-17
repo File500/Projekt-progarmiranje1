@@ -595,7 +595,14 @@ void optimisePPM(PPMImage* ppm){
 				int left = ppm->data[i][j-3];
 				int right = ppm->data[i][j+3]; 
 				
-				ppm->sharpRGB[i][j] = 5*current - left - right - up - down;
+				int result = 5*current - left - right - up - down;
+
+				if (result < 0)
+				{
+					result *= -1;
+				}
+
+				ppm->sharpRGB[i][j] = result;
 			}
 		}
 	}
