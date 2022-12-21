@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <windows.h>
 
 // Structure for storing the PPM
 // image data 
@@ -458,21 +459,88 @@ void show_cumulative_image_histogramsPPM(PPMImage* ppm){
 void show_image_histogramPGM(PGMImage* pgm){
 
 	printf("GRAY HISTOGRAM\nLegend:\n\'()\'->gray value\n\'[]\'->number of scaned values in image\n\n");
-	int i, j;
+
+	int i, j, tmp_i=180, tmp_j=-1;
+	char tmp[181][256];
+	memset(tmp, '=', sizeof tmp);
+
+	for (int i = 0; i < 256; ++i)
+	{
+		tmp[tmp_i][i] = '#';
+	}
 
 	for (i = 0; i <= pgm->maxValue; ++i)
 	{
 		printf("(%d)", i);
+
+		tmp_i = 179;
+		tmp_j++;
 
 		int barrierGRAY = decide_barrier(pgm->gray_counter[i]);
 
 		for (j = 0; j < barrierGRAY; ++j)
 		{
 			printf("=");
+			tmp[tmp_i][tmp_j] = '#';
+			tmp_i--;
 		}
 
 		printf("[%d]\n", pgm->gray_counter[i]);
 	}
+
+	//creation of txt file and writing in it to save histogram
+	FILE* gray_hist = fopen("Gray_histogram.txt", "w");
+
+	if (gray_hist == NULL)
+	{
+		printf("File creation failed!");
+		return;
+	}
+
+	int yos = 2000;
+	int xos = 0;
+	char space = ' ';
+
+	for (int i = 0; i < 181; ++i)
+	{
+		if (i % 45 == 0)
+		{
+			if (yos >= 1000)
+			{
+				fprintf(gray_hist, "%d|", yos);
+
+			}else if (yos == 500)
+			{
+				fprintf(gray_hist, "%d  |", yos);
+
+			}else{
+
+				fprintf(gray_hist, "%d      |", yos);
+			}
+
+			yos -= 500;
+			
+		}else{
+
+			fprintf(gray_hist, "       |");
+		}
+	
+		for (int j = 0; j < 256; ++j)
+		{
+			fprintf(gray_hist, "%c ", tmp[i][j]);
+		}
+
+		fprintf(gray_hist, "\n");
+	}
+
+	for (int i = 0; i < 776; ++i)
+	{
+		fprintf(gray_hist, "-");
+	}
+
+	fprintf(gray_hist, "\n       |");
+
+	fclose(gray_hist);
 }
 
 void show_cumulative_image_histogramPGM(PGMImage* pgm){
@@ -583,6 +651,7 @@ void optimisePPM(PPMImage* ppm){
 	{
 		for (int j = 0; j < ppm->data_width; ++j)
 		{
+			
 			if ((i == 0 || i == ppm->data_height - 1) || (j < 3 || j >= ppm->data_width - 3))
 			{
 				ppm->sharpRGB[i][j] = ppm->data[i][j];
@@ -693,6 +762,8 @@ void chose_file(PPMImage* ppm, PGMImage* pgm, char ipfile[1000]){
 /////////////////////////////////////////////MAIN//////////////////////////////////////////////////////////////////
 int main(int argc, char const* argv[])
 {
+	MessageBox(0,"To run this program successfully there are couple of rules and notes:\n\n1. You need to enter full name of picture file in the standard input (including .pgm or .ppm extention)\n 2. Picture size can be 1000x1000 maximum\n 3. Entered ppm or pgm file needs to be in the working directory where this program is located \n 4. If there is a problem with input or file the message will be presented in standard output\n 5. Histograms will be shown in standard output, new txt files will be also created to store histograms and a new sharpened picture with txt files will appear in the working directory of the program if compiled successfully\n\n To close this message and run code click OK button", "Inforamtion message", MB_OK );
+
 	PPMImage* ppm = malloc(sizeof(PPMImage));
 	PGMImage* pgm = malloc(sizeof(PGMImage));
 	char ipfile[1000];
@@ -704,3 +775,16 @@ int main(int argc, char const* argv[])
 
 	return 0;
 }
+
+
+/*
+>- prilikom pokretanja potrebno je korisniku napisati što je ulaz i u
+> kojem formatu ili omogučiti unos ulazne datoteke prilikom pokretanja
+> programa i obavijest ukoliko slika nije pronađena ili format ne
+> odgovara ---> DONE
+
+> - zapis histograma u datoteke ---> za Gray napravljeno
+
+> - ako je moguće rotirati histograme i pretvoriti ih u sliku  i
+> zapisati u datoteku.
+*/
