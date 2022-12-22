@@ -296,6 +296,86 @@ void print_immagePGM(PGMImage* pgm){
 
 
 /////////////////////////////////////////////////////////////////Histograms///////////////////////////////////////
+//function used to store histogram data in trxt files
+void createHistogramFile(char tmp[][256], FILE *file, int flag){
+
+	int yos = 2000;
+
+	//creation of txt file and writing in it to save histogram
+	if (file == NULL)
+	{
+		printf("File creation failed!");
+		return;
+	}
+
+	if (flag == 1)
+	{
+		yos = 40000;
+	}
+
+	for (int i = 0; i < 181; ++i)
+	{
+		//checking if the sent file is for cumulative or normal histogram
+		//becouse of printed numbers on the y axsis
+		if (flag == 1)
+		{
+			if (i % 45 == 0)
+			{
+				if (yos == 0)
+				{
+					fprintf(file, "%d        |", yos);
+
+				}else{
+					fprintf(file, "%d|", yos);
+				}
+
+				yos -= 10000;
+			
+			}else{
+
+				fprintf(file, "         |");
+			}
+		}else{
+
+			if (i % 45 == 0)
+			{
+				if (yos >= 1000)
+				{
+					fprintf(file, "%d|", yos);
+
+				}else if (yos == 500)
+				{
+					fprintf(file, "%d  |", yos);
+
+				}else{
+
+					fprintf(file, "%d      |", yos);
+				}
+
+				yos -= 500;
+			
+			}else{
+
+				fprintf(file, "       |");
+			}
+		}
+		
+		for (int j = 0; j < 256; ++j)
+		{
+			fprintf(file, "%c ", tmp[i][j]);
+		}
+
+		fprintf(file, "\n");
+	}
+
+	for (int i = 0; i < 776; ++i)
+	{
+		fprintf(file, "-");
+	}
+
+	fprintf(file, "\n       |");
+}
+
 //Function used to optimise output based on values of counters
 int decide_barrier(int count){
 	int num = 180;
@@ -326,133 +406,252 @@ int decide_barrier_cumulative(int count){
 
 	int number = 180;
 	
-	if (count > 40000)
+	if (count > 100000)
 	{
 		return number;
 	}
 
-	number = count / 223;
+	number = count / 400;
 	return number;
 }
 
 void show_image_histogramsPPM(PPMImage* ppm){
 
-	//red histogram
 	int i, j;
+	int tmp_i=180, tmp_j=-1;
+	char tmp[181][256];
+
+	FILE* color_hist = fopen("RGB_histogram.txt", "w");
+
+	//red histogram////////////////////////////////////////////////
+	memset(tmp, '=', sizeof tmp);
+	for (int i = 0; i < 256; ++i)
+	{
+		tmp[tmp_i][i] = '#';
+	}
+
+	fprintf(color_hist, "RED HISTOGRAM\n\n");
+	
 	printf("RED HISTOGRAM\nLegend:\n\'()\'->red value\n\'[]\'->number of scaned values in image\n\n");
 
 	for (i = 0; i <= ppm->maxValue; ++i)
 	{
 		printf("(%d)", i);
 
+		tmp_i = 179;
+		tmp_j++;
+
 		int barrier = decide_barrier(ppm->red_counter[i]);
 		
 		for (j = 0; j < barrier; ++j)
 		{
 			printf("=");
+			tmp[tmp_i][tmp_j] = '#';
+			tmp_i--;
 		}
 
 		printf("[%d]\n", ppm->red_counter[i]);		
 		
 	}
 
-	//green histogram
+	createHistogramFile(tmp, color_hist, 0);
+
+	//green histogram//////////////////////////////////////////////
+	tmp_i=180; 
+	tmp_j=-1;
+	memset(tmp, '=', sizeof tmp);
+
+	for (int i = 0; i < 256; ++i)
+	{
+		tmp[tmp_i][i] = '#';
+	}
+
+	fprintf(color_hist, "\n\nGREEN HISTOGRAM\n\n");
+	
 	printf("\nGREEN HISTOGRAM\nLegend:\n\'()\'->green value\n\'[]\'->number of scaned values in image\n\n");
 
 	for (i = 0; i <= ppm->maxValue; ++i)
 	{
 		printf("(%d)", i);
 
+		tmp_i = 179;
+		tmp_j++;
+
 		int barrier = decide_barrier(ppm->green_counter[i]);
 
 		for (j = 0; j < barrier; ++j)
 		{
 			printf("#");
+			tmp[tmp_i][tmp_j] = '#';
+			tmp_i--;
 		}
 
 		printf("[%d]\n", ppm->green_counter[i]);
 		
 	}
 
-	//blue histogram
+	createHistogramFile(tmp, color_hist, 0);
+
+	//blue histogram///////////////////////////////////////////////
+	tmp_i=180; 
+	tmp_j=-1;
+	memset(tmp, '=', sizeof tmp);
+
+	for (int i = 0; i < 256; ++i)
+	{ 
+		tmp[tmp_i][i] = '#';
+	}
+
+	fprintf(color_hist, "\n\nBLUE HISTOGRAM\n\n");
+	
 	printf("\nBLUE HISTOGRAM\nLegend:\n\'()\'->blue value\n\'[]\'->number of scaned values in image\n\n");
 
 	for (i = 0; i <= ppm->maxValue; ++i)
 	{	
 		printf("(%d)", i);
+
+		tmp_i = 179;
+		tmp_j++;
 		
 		int barrier = decide_barrier(ppm->blue_counter[i]);
 
 		for (j = 0; j < barrier; ++j)
 		{
 			printf("+");
+			tmp[tmp_i][tmp_j] = '#';
+			tmp_i--;
 		}
 
 		printf("[%d]\n", ppm->blue_counter[i]);	
 		
 	}
 
+	createHistogramFile(tmp, color_hist, 0);
 
+	fclose(color_hist);
 }
 
 void show_cumulative_image_histogramsPPM(PPMImage* ppm){
 
 	int i, j;
 	int cdfRED = 0, cdfGREEN = 0, cdfBLUE = 0;
-	//cummulative histogram
+	int tmp_i=180, tmp_j=-1;
+	char tmp[181][256];
+
+	FILE* color_cumuhist = fopen("RGB_histogram_cumulative.txt", "w");
+
+	//red histogram////////////////////////////////////////////////
+	memset(tmp, '=', sizeof tmp);
+	for (int i = 0; i < 256; ++i)
+	{
+		tmp[tmp_i][i] = '#';
+	}
+
+	fprintf(color_cumuhist, "RED CUMULATIVE HISTOGRAM\n\n");
+	
 	printf("\nRED CUMULATIVE HISTOGRAM\n\n");
 
 	for (i = 0; i <= ppm->maxValue; ++i)
 	{
 		cdfRED += ppm->red_counter[i];
-		//red
+		
 		printf("(%d)", i);
+
+		tmp_i = 179;
+		tmp_j++;
 
 		int barrierRED = decide_barrier_cumulative(cdfRED);
 
 		for (j = 0; j < barrierRED; ++j)
 		{
 			printf(" ");
+			tmp_i--;
 		}
+
+		tmp[tmp_i][tmp_j] = '#';
 
 		printf("=\n");	
 	}
+
+	createHistogramFile(tmp, color_cumuhist, 1);
+
+	//green histogram//////////////////////////////////////////////
+	tmp_i=180; 
+	tmp_j=-1;
+	memset(tmp, '=', sizeof tmp);
+
+	for (int i = 0; i < 256; ++i)
+	{
+		tmp[tmp_i][i] = '#';
+	}
+
+	fprintf(color_cumuhist, "\n\nGREEN CUMULATIVE HISTOGRAM\n\n");
 
 	printf("\nGREEN CUMULATIVE HISTOGRAM\n\n");
 
 	for (int i = 0; i <= ppm->maxValue; ++i)
 	{
 		cdfGREEN += ppm->green_counter[i];
-		//green
+		
 		printf("(%d)", i);
+
+		tmp_i = 179;
+		tmp_j++;
 
 		int barrierGREEN = decide_barrier_cumulative(cdfGREEN);
 
 		for (j = 0; j < barrierGREEN; ++j)
 		{
 			printf(" ");
+			tmp_i--;
 		}
+
+		tmp[tmp_i][tmp_j] = '#';
 
 		printf("#\n");
 	}
+
+	createHistogramFile(tmp, color_cumuhist, 1);
+
+	//blue histogram///////////////////////////////////////////////
+	tmp_i=180; 
+	tmp_j=-1;
+	memset(tmp, '=', sizeof tmp);
+
+	for (int i = 0; i < 256; ++i)
+	{ 
+		tmp[tmp_i][i] = '#';
+	}
+
+	fprintf(color_cumuhist, "\n\nBLUE CUMULATIVE HISTOGRAM\n\n");
 
 	printf("\nBLUE CUMULATIVE HISTOGRAM\n\n");
 
 	for (int i = 0; i <= ppm->maxValue; ++i)
 	{
 		cdfBLUE += ppm->blue_counter[i];
-		//blue
+		
 		printf("(%d)", i);
+
+		tmp_i = 179;
+		tmp_j++;
 		
 		int barrierBLUE = decide_barrier_cumulative(cdfBLUE);
 
 		for (j = 0; j < barrierBLUE; ++j)
 		{
 			printf(" ");
+			tmp_i--;
 		}
+
+		tmp[tmp_i][tmp_j] = '#';
 
 		printf("+\n");	
 	}
+
+	createHistogramFile(tmp, color_cumuhist, 0);
+
+	fclose(color_cumuhist);
 
 }
 
@@ -488,66 +687,24 @@ void show_image_histogramPGM(PGMImage* pgm){
 		printf("[%d]\n", pgm->gray_counter[i]);
 	}
 
-	//creation of txt file and writing in it to save histogram
 	FILE* gray_hist = fopen("Gray_histogram.txt", "w");
-
-	if (gray_hist == NULL)
-	{
-		printf("File creation failed!");
-		return;
-	}
-
-	int yos = 2000;
-	int xos = 0;
-	char space = ' ';
-
-	for (int i = 0; i < 181; ++i)
-	{
-		if (i % 45 == 0)
-		{
-			if (yos >= 1000)
-			{
-				fprintf(gray_hist, "%d|", yos);
-
-			}else if (yos == 500)
-			{
-				fprintf(gray_hist, "%d  |", yos);
-
-			}else{
-
-				fprintf(gray_hist, "%d      |", yos);
-			}
-
-			yos -= 500;
-			
-		}else{
-
-			fprintf(gray_hist, "       |");
-		}
-	
-		for (int j = 0; j < 256; ++j)
-		{
-			fprintf(gray_hist, "%c ", tmp[i][j]);
-		}
-
-		fprintf(gray_hist, "\n");
-	}
-
-	for (int i = 0; i < 776; ++i)
-	{
-		fprintf(gray_hist, "-");
-	}
-
-	fprintf(gray_hist, "\n       |");
-
+	createHistogramFile(tmp, gray_hist, 0);
 	fclose(gray_hist);
 }
 
 void show_cumulative_image_histogramPGM(PGMImage* pgm){
 
-	int i, j;
 	int cdfGRAY = 0;
+	int i, j, tmp_i=180, tmp_j=-1;
+	char tmp[181][256];
+	memset(tmp, '=', sizeof tmp);
+
 	pgm->min_occ = 0;
+
+	for (int i = 0; i < 256; ++i)
+	{
+		tmp[tmp_i][i] = '#';
+	}
 
 	//cummulative histogram
 	printf("\nGRAY CUMULATIVE HISTOGRAM\n\n");
@@ -555,6 +712,9 @@ void show_cumulative_image_histogramPGM(PGMImage* pgm){
 	for (i = 0; i <= pgm->maxValue; ++i)
 	{
 		cdfGRAY += pgm->gray_counter[i];
+
+		tmp_i = 179;
+		tmp_j++;
 
 		if (cdfGRAY > 0 && pgm->min_occ == 0)
 		{
@@ -568,11 +728,16 @@ void show_cumulative_image_histogramPGM(PGMImage* pgm){
 		for (j = 0; j < barrierGRAY; ++j)
 		{
 			printf(" ");
+			tmp_i--;
 		}
 
+		tmp[tmp_i][tmp_j] = '#';
 		printf("=\n");	
 	}
 
+	FILE* gray_cumuhist = fopen("Gray_histogram_cumulative.txt", "w");
+	createHistogramFile(tmp, gray_cumuhist, 1);
+	fclose(gray_cumuhist);
 }
 ////////////////////////////////////////////////Image Sharpening////////////////////////////////////////////////
 int optimisePGM(PGMImage* pgm, int pos){
@@ -775,16 +940,3 @@ int main(int argc, char const* argv[])
 
 	return 0;
 }
-
-
-/*
->- prilikom pokretanja potrebno je korisniku napisati što je ulaz i u
-> kojem formatu ili omogučiti unos ulazne datoteke prilikom pokretanja
-> programa i obavijest ukoliko slika nije pronađena ili format ne
-> odgovara ---> DONE
-
-> - zapis histograma u datoteke ---> za Gray napravljeno
-
-> - ako je moguće rotirati histograme i pretvoriti ih u sliku  i
-> zapisati u datoteku.
-*/
