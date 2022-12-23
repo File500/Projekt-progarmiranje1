@@ -310,7 +310,7 @@ void createHistogramFile(char tmp[][256], FILE *file, int flag){
 
 	if (flag == 1)
 	{
-		yos = 40000;
+		yos = 90000;
 	}
 
 	for (int i = 0; i < 181; ++i)
@@ -319,7 +319,7 @@ void createHistogramFile(char tmp[][256], FILE *file, int flag){
 		//becouse of printed numbers on the y axsis
 		if (flag == 1)
 		{
-			if (i % 45 == 0)
+			if (i % 20 == 0)
 			{
 				if (yos == 0)
 				{
@@ -406,7 +406,7 @@ int decide_barrier_cumulative(int count){
 
 	int number = 180;
 	
-	if (count > 100000)
+	if (count > 90000)
 	{
 		return number;
 	}
