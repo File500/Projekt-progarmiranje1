@@ -251,7 +251,6 @@ bool openPGM(PGMImage* pgm, const char* filename){
 	// Close the file
 	fclose(pgmfile);
 
-
 	return true;
 }
 
@@ -411,7 +410,7 @@ int decide_barrier_cumulative(int count){
 		return number;
 	}
 
-	number = count / 400;
+	number = count / 500;
 	return number;
 }
 
