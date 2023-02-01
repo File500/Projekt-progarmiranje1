@@ -809,7 +809,6 @@ void optimisePPM(PPMImage* ppm){
 	//sharpening pixels using their neghbours
 	//method used for gray image doesn't apply to RGB picture
 	//so we can use alternative method 
-	int iterator = 0;
 
 	for (int i = 0; i < ppm->data_height; ++i)
 	{
