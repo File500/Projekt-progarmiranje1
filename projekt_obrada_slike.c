@@ -901,7 +901,7 @@ void sharpen_image_PPM(PPMImage* ppm){
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Function used to determine wich file was used as an input to the program
-void chose_file(PPMImage* ppm, PGMImage* pgm, char ipfile[1000]){
+void chose_file(PPMImage* ppm, PGMImage* pgm, char *ipfile){
 	// Retrieving the file extension
 
 	char* ext = strrchr(ipfile, '.');
@@ -956,11 +956,13 @@ int main(int argc, char const* argv[])
 {
 	MessageBox(0,"To run this program successfully there are couple of rules and notes:\n\n1. You need to enter full name of picture file in the standard input (including .pgm or .ppm extention)\n 2. Picture size can be 1000x1000 maximum\n 3. Entered ppm or pgm file needs to be in the working directory where this program is located \n 4. If there is a problem with input or file the message will be presented in standard output\n 5. Histograms will be shown in standard output, new txt files will be also created to store histograms and a new sharpened picture with txt files will appear in the working directory of the program if compiled successfully\n\n To close this message and run code click OK button", "Inforamtion message", MB_OK );
 
+
 	PPMImage* ppm = malloc(sizeof(PPMImage));
 	PGMImage* pgm = malloc(sizeof(PGMImage));
 	char ipfile[1000];
 
-	scanf("%s", &ipfile);
+	printf("Plese enter a name of a picture with .ppm or .pgm file extension included: ");
+	scanf("%s", ipfile);
 	printf("ip file : %s\n", ipfile);
 
 	chose_file(ppm, pgm, ipfile);
